@@ -1,0 +1,15 @@
+__pycache__
+_analysis
+_db
+_history
+
+.vscode
+.cache-c.bochulak
+.cache-deedanvy
+.cache-notbobbobby
+
+archive_discover.bat
+archive_history.bat
+archive_library.bat
+
+api_spotify.py
