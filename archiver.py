@@ -78,7 +78,7 @@ def archive_spotify_library(args):
     simple_output('Date', date)
     simple_output('-'*40)
 
-    playlists = backup.get_user_playlists(user_id)
+    playlists = backup.get_user_playlists(user_id, discover_database=False)
     tracks = backup.get_user_tracks(user_id, playlists=playlists)
     features = backup.get_user_unique_tracks_and_features(user_id, tracks=tracks)
 
@@ -92,15 +92,15 @@ def archive_spotify_library(args):
     tracks_name = '{}_{}_tracks.json'.format(user_id, date)
     features_name = '{}_{}_features.json'.format(user_id, date)
 
+    playlists.to_json(playlists_name, orient='records', lines=True)
+    tracks.to_json(tracks_name, orient='records', lines=True)
+    features.to_json(features_name, orient='records', lines=True)
+
     simple_output('Database Location', output_directory)
     simple_output('Playlists', playlists_name)
     simple_output('Tracks', tracks_name)
     simple_output('Features', features_name)
     simple_output('-'*40)
-
-    playlists.to_json(playlists_name, orient='records', lines=True)
-    tracks.to_json(tracks_name, orient='records', lines=True)
-    features.to_json(features_name, orient='records', lines=True)
 
     simple_output('Done!')
 
