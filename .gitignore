@@ -3,6 +3,12 @@ _analysis
 _db
 _history
 
+flask_visualization
+
+*.json
+*.ipynb
+*.ipynb_checkpoints
+
 .vscode
 .cache-c.bochulak
 .cache-deedanvy
