@@ -1,17 +1,14 @@
-import csv
 import json
 import os
-import sys
 from argparse import ArgumentParser
 from datetime import datetime
 
-import spotipy
-import spotipy.util as util
-from spotipy.oauth2 import SpotifyClientCredentials
+import pandas as pd
 
 import backup
-from backup import DATETIME_FORMAT_FILENAME, DATETIME_FORMAT_SHORT, \
-                   get_spotify_instance, simple_output
+from backup import (DATETIME_FORMAT_FILENAME, DATETIME_FORMAT_SHORT,
+                    DATETIME_FORMAT_YR, DATETIME_FORMAT_YR_MTH,
+                    get_spotify_instance, simple_output)
 
 LISTENING_HISTORY_DIRECTORY = '_history'
 SPOTIFY_LIBRARY_DIRECTORY = '_db'
@@ -70,7 +67,7 @@ def archive_discover_playlists(args):
 
 def archive_spotify_library(args):
     user_id = args.user_id
-    date = datetime.now().strftime(DATETIME_FORMAT_FILENAME)
+    date = datetime.now().strftime(DATETIME_FORMAT_SHORT)
 
     simple_output('-'*40)
     simple_output('Archiving Spotify Library (ASL)')
@@ -123,12 +120,39 @@ def archive_listening_history(args):
         user_id)
     _chdir(output_directory)
 
-    history_name = '{}.json'.format(date)
+    # STORE TO MONTHLY DIRECTORY
+    current_month = datetime \
+        .strptime(date, DATETIME_FORMAT_FILENAME) \
+        .strftime(DATETIME_FORMAT_YR_MTH)
+    history_month = '{}_{}_history.json'.format(user_id, current_month)
+
+    if not os.path.exists(history_month):
+        current_history = history
+    else:
+        current_history = pd.read_json(history_month, orient='records', lines=True)
+        current_history = pd.concat([current_history, history])
+        current_history.drop_duplicates(subset='played_at', inplace=True)
+    
+    current_history.to_json(history_month, orient='records', lines=True)
+
+    # STORE TO YEARLY DIRECTORY
+    current_year = datetime \
+        .strptime(date, DATETIME_FORMAT_FILENAME) \
+        .strftime(DATETIME_FORMAT_YR)
+    history_year = '{}_{}_history.json'.format(user_id, current_year)
+
+    if not os.path.exists(history_year):
+        current_history = history
+    else:
+        current_history = pd.read_json(history_year, orient='records', lines=True)
+        current_history = pd.concat([current_history, history])
+        current_history.drop_duplicates(subset='played_at', inplace=True)
+
+    current_history.to_json(history_year, orient='records', lines=True)
 
     simple_output('History Location', output_directory)
-    simple_output('History', history_name)
-
-    history.to_json(history_name, orient='records', lines=True)
+    simple_output('History (Month)', history_month)
+    simple_output('History (Year)', history_year)
 
     simple_output('Done!')
 

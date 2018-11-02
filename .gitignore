@@ -1,12 +1,8 @@
 __pycache__
 _analysis
-_db
-_history
+_db/old
+_history/old
 
-flask_visualization
-
-*.json
-*.ipynb
 *.ipynb_checkpoints
 
 .vscode

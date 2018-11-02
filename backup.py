@@ -34,6 +34,8 @@ SCOPE = ','.join(['playlist-read-private',
 DATETIME_FORMAT_DEFAULT = '%Y-%m-%dT%H:%M:%SZ'
 DATETIME_FORMAT_FILENAME = '%Y-%m-%dT%H-%M-%SZ'
 DATETIME_FORMAT_SHORT = '%Y-%m-%d'
+DATETIME_FORMAT_YR_MTH = '%Y-%m'
+DATETIME_FORMAT_YR = '%Y'
 
 
 def get_spotify_instance(user_id, scope=SCOPE):
@@ -192,6 +194,7 @@ def get_listening_history(user_id):
     features = get_user_unique_tracks_and_features(user_id, tracks)
 
     history = pd.merge(tracks, features, how='outer', on=['track_id', 'track_name'])
+    history['played_at'] = pd.to_datetime(history['played_at'])
     
     simple_output('Done!')
     simple_output('-'*40)
