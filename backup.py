@@ -7,23 +7,9 @@ import pandas as pd
 import spotipy
 import spotipy.util as util
 
-from api_spotify import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+from api_spotify import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, USER_LOOKUP
 
-# DEFINE USER INFORMATION
-USER_LOOKUP = {
-    'notbobbobby': 'Calvin',
-    'deedanvy': 'Danvy',
-    'c.bochulak': 'Charlotte',
-    'eriica_k': 'Erica',
-    'zzalan': 'Alan',
-    '12180635139': 'Aiden',
-    'danthemank': 'Danielle',
-    'deanbo007': 'Dean',
-    'chickenrox1': 'Derek',
-    'indieairyt': 'IndieAir',
-    'j_bus195': 'Jennifer',
-    'liza_boch02': 'Liza'}
-
+# DEFINE REQUIRED SCOPES FOR BACKUP/ARCHIVING
 SCOPE = ','.join(['playlist-read-private',
                   'playlist-read-collaborative',
                   'playlist-modify-public',
@@ -31,6 +17,7 @@ SCOPE = ','.join(['playlist-read-private',
                   'user-library-read',
                   'user-read-recently-played'])
 
+# DEFINE A FEW STANDARD DATETIME STYLES
 DATETIME_FORMAT_DEFAULT = '%Y-%m-%dT%H:%M:%SZ'
 DATETIME_FORMAT_FILENAME = '%Y-%m-%dT%H-%M-%SZ'
 DATETIME_FORMAT_SHORT = '%Y-%m-%d'
@@ -38,18 +25,74 @@ DATETIME_FORMAT_YR_MTH = '%Y-%m'
 DATETIME_FORMAT_YR = '%Y'
 
 
-def get_spotify_instance(user_id, scope=SCOPE):
+def get_spotify_instance(user_id, scope=SCOPE, client_id=CLIENT_ID,
+                         client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI):
+    """ Obtains a Spotify token with a specified USER_ID, SCOPE, CLIENT_ID,
+        CLIENT_SECRET, and REDIRECT_URi. Returns a Spotipy object for querying
+        the API directly
+    
+    Arguments:
+        user_id (str): The users' id
+        scope (str): A comma-delimited list of scopes which the token should contain
+        client_id (str): Client ID obtained from the Spotify API Developer Dashboard
+        client_secret (str): Client Secret obtained from the Spotify API Developer Dashboard
+        redirect_uri (str): An authorized redirect uri
+    
+    Returns:
+        (spotipy.Spotipy) Spotipy object
+    """
+
     token = util.prompt_for_user_token(
         user_id,
         scope=scope,
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        redirect_uri=REDIRECT_URI)
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri=redirect_uri)
 
     return spotipy.Spotify(auth=token)
     
 
 def get_user_playlists(user_id, discover_database=False):
+    """ Gets a users' static playlists (e.g. not Discover Weekly) and formats them
+        based on a simplified schema for representing playlist information. 
+    
+    Arguments:
+        user_id (str): The users' id
+        disover_database (bool): 
+            True: find all playlists BETWEEN indicator playlists denoted by a '.'
+            False: find all playlist OUTSIDE the indicator playlists
+            (default: False)
+    
+    Returns:
+        (pandas.DataFrame) Users' playlists
+
+    Required scopes:
+        - playlist-read-private
+        - playlist-read-collaborative
+        - user-library-read
+
+    Example Library
+        Vexento n' Chill
+        .
+        Calvin,notbobbobby
+        2018-11-05
+        Danvy,deedanvy
+        2018-11-05
+        .
+        Upbeat
+
+    discover_database = True
+    - playlists = [
+        2018-11-05 (notbobbobby),
+        2018-11-05 (deedanvy)]
+
+    discover_database = False
+    - playlist = [
+        Vexento n' Chill,
+        Upbeat]
+
+    """
+
     simple_output('Finding All Playlists')
     simple_output('User', user_id)
     sp = get_spotify_instance(user_id)
@@ -114,6 +157,23 @@ def get_user_playlists(user_id, discover_database=False):
 
 
 def get_user_tracks(user_id, playlists=None):
+    """ Gets a users' tracks based on either an input set of playlists or
+        requested set of playlists. Format is based on a simplified/flattened
+        set of attributes which describe the track information
+    
+    Arguments:
+        user_id (str): The users' id
+        playlists (pandas.DataFrame): Playlists to search (default: None)
+    
+    Returns:
+        (pandas.DataFrame) Users' tracks
+
+    Required scopes:
+        - playlist-read-private
+        - playlist-read-collaborative
+        - user-library-read
+    """
+
     simple_output('Finding All Tracks')
     simple_output('User', user_id)    
     sp = get_spotify_instance(user_id)
@@ -150,6 +210,23 @@ def get_user_tracks(user_id, playlists=None):
 
 
 def get_user_unique_tracks_and_features(user_id, tracks=None):
+    """ Get a users' track features based on an input set of tracks or requested
+        set of tracks. Only unique instances are retained. Duplicates are dropped
+        to reduce dataframe size
+    
+    Arguments:
+        user_id (str): The users' id
+        tracks (pandas.DataFrame): Tracks to search (default: None)
+    
+    Returns:
+        (pandas.DataFrame) Users' track features
+
+    Required scopes (only if tracks are not provided):
+        - playlist-read-private
+        - playlist-read-collaborative
+        - user-library-read
+    """
+
     simple_output('Filtering For Unique Tracks')
     simple_output('User', user_id)
     sp = get_spotify_instance(user_id)
@@ -182,6 +259,16 @@ def get_user_unique_tracks_and_features(user_id, tracks=None):
 
 
 def get_listening_history(user_id):
+    """ Get a users' last 50 listened to tracks. Includes track feature
+        information for further analysis capabilities.
+    
+    Arguments:
+        user_id (str) : The users' id
+    
+    Returns:
+        (pandas.DataFrame) The users' last 50 listened to tracks
+    """
+
     simple_output('Gathering Listening History')
     simple_output('User', user_id)
     sp = get_spotify_instance(user_id, SCOPE)
@@ -203,6 +290,14 @@ def get_listening_history(user_id):
 
 
 def simple_output(*args, flush=False):
+    """ I got tired of formatting my output. Put what I needed to here to get
+        done here
+
+        Arguments: 
+            *args
+            flush (bool): whether to flush the output window or not (default: False)
+    """
+
     end = '' if flush else '\n'
     if len(args) == 1:
         print('\r' + args[0] + ' '*24, end=end, flush=flush)
@@ -257,6 +352,7 @@ def _format_playlist(playlist, sp, user_id, discover_id=None):
         'is_original': (user_id == playlist['owner']['id']),
         'created_at': date_created,
         'playlist_uri': playlist['uri']}
+    
     if discover_id is not None:
         new_playlist['discover_id'] = discover_id
         new_playlist['discover_display_name'] = USER_LOOKUP[discover_id] \
