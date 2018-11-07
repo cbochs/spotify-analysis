@@ -25,6 +25,9 @@ def cli():
     parser.add_argument('-u', '--user_id',
         type=str,
         default='notbobbobby')
+    parser.add_argument('-db', '--database',
+        action='store_true',
+        default=False)
     return parser.parse_args()
 
 
@@ -75,9 +78,12 @@ def archive_spotify_library(args):
     simple_output('Date', date)
     simple_output('-'*40)
 
-    playlists = backup.get_user_playlists(user_id, discover_database=False)
+    playlists = backup.get_user_playlists(user_id, discover_database=args.database)
     tracks = backup.get_user_tracks(user_id, playlists=playlists)
     features = backup.get_user_unique_tracks_and_features(user_id, tracks=tracks)
+    
+    library = pd.merge(tracks, playlists, how='outer', on=['playlist_id', 'playlist_name'])
+    library = pd.merge(library, features, how='outer', on=['track_id', 'track_name'])
 
     output_directory = os.path.join(
         os.path.dirname(__file__),
@@ -85,18 +91,25 @@ def archive_spotify_library(args):
         user_id, date)
     _chdir(output_directory)
 
+    # Change user_id to 'discover' if backing up the database
+    if args.database:
+        user_id = 'discover'
+    
     playlists_name = '{}_{}_playlists.json'.format(user_id, date)
     tracks_name = '{}_{}_tracks.json'.format(user_id, date)
     features_name = '{}_{}_features.json'.format(user_id, date)
+    library_name = '{}_{}_library.json'.format(user_id, date)
 
     playlists.to_json(playlists_name, orient='records', lines=True)
     tracks.to_json(tracks_name, orient='records', lines=True)
     features.to_json(features_name, orient='records', lines=True)
+    library.to_json(library_name, orient='records', lines=True)
 
     simple_output('Database Location', output_directory)
     simple_output('Playlists', playlists_name)
     simple_output('Tracks', tracks_name)
     simple_output('Features', features_name)
+    simple_output('Library', library_name)
     simple_output('-'*40)
 
     simple_output('Done!')
