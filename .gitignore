@@ -1,7 +1,5 @@
 __pycache__
-_analysis
-_db/old
-_history/old
+_*
 
 *.ipynb_checkpoints
 
@@ -14,4 +12,5 @@ archive_discover.bat
 archive_history.bat
 archive_library.bat
 
+main.py
 api_spotify.py
