@@ -4,13 +4,12 @@ _*
 *.ipynb_checkpoints
 
 .vscode
-.cache-c.bochulak
-.cache-deedanvy
-.cache-notbobbobby
+.cache-*
 
-archive_discover.bat
-archive_history.bat
-archive_library.bat
+*.ipynb
+*.json
+*.bat
 
+api.py
+db.py
 main.py
-api_spotify.py
